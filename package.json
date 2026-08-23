@@ -1,0 +1,8 @@
+{
+  "name": "arithmetic-game",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sim": "node sim/exp1.js && node sim/exp6.js && node sim/exp7.js"
+  }
+}

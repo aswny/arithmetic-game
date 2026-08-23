@@ -105,6 +105,34 @@ export function costOf(item) {
       - 0.9 * (isRound(a) || isRound(b) ? 1 : 0);
   }
 
-  // Exact division a / b = q, solved by recalling the matching product.
-  return costOf({ op: '*', a: Math.round(a / b), b }) + 0.8;
+  // Exact division a / b = q, solved by recognizing the divisor and reading
+  // off (or deriving) the quotient it implies. The divisor's own
+  // recognizability -- a single-digit table divisor, or one close to a
+  // multiple of ten -- is what a person actually caches, and it doesn't
+  // erode as the dividend grows: "divide by 10" stays a one-step shortcut
+  // whether the dividend is 100 or 100000. So `familiarity` here depends on
+  // the divisor alone, not on how big the quotient it produces happens to
+  // be. Everything else (quotient length, an unfamiliar divisor's own
+  // digits, genuine multi-digit derivation) still scales up continuously,
+  // so a division against an unrecognizable divisor still costs like the
+  // multi-digit multiplication it actually is -- there's no longer a
+  // branch to jump across on the way there.
+  //
+  // This used to reuse costOf({ op: '*', a: q, b }), which inherits
+  // multiplication's hard a<=10 && b<=10 cutoff. Fine for multiplication --
+  // that's the real problem there -- but wrong here: it made 290/10 (a
+  // divisor that never stops being trivial) cost as much as 87x46 the
+  // instant the quotient passed 10, a discontinuity with no counterpart in
+  // how the division is actually solved.
+  const q = Math.round(a / b);
+  const distToRound = Math.min(b % 10, 10 - (b % 10));
+  const familiarity = b <= 10 ? 1 : Math.max(0, 1 - distToRound / 5);
+  const unfamiliar = 1 - familiarity;
+  return 0.8 // backward-solve overhead
+    + 1.0 * Math.max(0, digits(q) - 1) // longer quotient, more to derive -- always costs something
+    + 1.6 * Math.max(0, digits(b) - 1) * unfamiliar // an unrecognizable divisor's own length
+    + 0.9 * partialCarries(q, b) * unfamiliar // genuine derivation, once it's not just recall
+    + 0.35 * log10(a)
+    - 0.9 * familiarity // recognizing a familiar divisor
+    - 0.5 * (q === b ? 1 : 0); // quotient equals divisor -- a squared fact
 }

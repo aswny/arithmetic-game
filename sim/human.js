@@ -79,8 +79,27 @@ function solveMs(item) {
       - (a % 10 === 0 || b % 10 === 0 ? 400 : 0);
   }
 
-  // Division is solved by recalling the matching product, with overhead.
-  return 1.3 * solveMs({ op: '*', a: Math.round(a / b), b }) + 200;
+  // Division is solved by recognizing the divisor and reading off (or
+  // deriving) the quotient it implies -- NOT by working the full forward
+  // multiplication back to front. A single-digit divisor, or one close to a
+  // multiple of ten, stays a quick recognition step no matter how large the
+  // dividend gets: dividing by 10 doesn't get four times slower just because
+  // the dividend crossed 100. (This used to reuse solveMs('*', q, b)
+  // wholesale, which inherits multiplication's own table-vs-multi-digit
+  // strategy switch -- appropriate when multiplying two genuinely unknown
+  // factors, wrong here, where the divisor is known and often trivial. Kept
+  // as its own formula, not a call into solveMs, so this file stays an
+  // independent read on the same real-world shortcut cost.js now models --
+  // not cost.js's fix copied over.)
+  const q = Math.round(a / b);
+  const distToRound = Math.min(b % 10, 10 - (b % 10));
+  const divisorFamiliarity = b <= 10 ? 1 : Math.max(0, 1 - distToRound / 5);
+  return 260 // recognizing this as a backward-multiplication step
+    + 210 * (nDigits(q) - 1)
+    + 480 * (nDigits(b) - 1) * (1 - divisorFamiliarity)
+    + 60 * log2(a)
+    - 260 * divisorFamiliarity
+    - 130 * (q === b ? 1 : 0);
 }
 
 // Probability of a wrong answer, independent of the timing model above.

@@ -3,6 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sim": "node sim/exp1.js && node sim/exp6.js && node sim/exp7.js"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "sim": "node sim/exp1.js && node sim/exp6.js && node sim/exp7.js",
+    "verify": "node scripts/verify-ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^0.21.1"
   }
 }

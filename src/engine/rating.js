@@ -19,6 +19,10 @@ export const TARGET_SECONDS = 2.5;
 const COST_CENTER = 3.0;    // centred so intercept and slope decouple
 const ACC_WIDTH = 1.6;
 
+// Bounds on the rating extrapolation -- roughly the span the generator covers.
+export const RATING_MIN = 0.5;
+export const RATING_MAX = 11.0;
+
 const LR0 = 0.30, LR_TAU = 40, LR_MIN = 0.025;
 const SLOPE_GAIN = 0.08;
 const FACET_GAIN = 0.55, FACET_SHRINK = 0.06;
@@ -53,10 +57,19 @@ export const predictCorrect = (profile, cost) =>
   sigmoid((profile.accThreshold - cost) / ACC_WIDTH);
 
 // The rating: cost sustainable at TARGET_SECONDS. Per-facet when asked.
+//
+// This reads a target latency off a fitted line, so it is an extrapolation, and
+// a near-flat line extrapolates to nonsense: a solver whose latency does not
+// vary with cost -- someone using a calculator, a child mashing keys, or a run
+// that happened to sample a narrow cost range -- drives `slope` to its floor
+// and the quotient to infinity. RATING_MIN/MAX bound the answer to costs the
+// generator can actually produce. The fit itself is left undistorted; only the
+// extrapolation drawn from it is bounded.
 export function ratingCost(profile, facet = null) {
   const off = facet ? (profile.offsets[facet] ?? 0) : 0;
   const slope = Math.max(profile.slope, 0.05);
-  return (Math.log(TARGET_SECONDS) - profile.intercept - off) / slope;
+  const rating = (Math.log(TARGET_SECONDS) - profile.intercept - off) / slope;
+  return Math.min(RATING_MAX, Math.max(RATING_MIN, rating));
 }
 
 // Cost at which the player is predicted to be `p` accurate.

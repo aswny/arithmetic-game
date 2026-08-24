@@ -79,11 +79,56 @@ Findings that drove the configuration:
   roughly cost 1 are indistinguishable to the model. The ramp must not start
   down there.
 
+One more guard came out of playing it rather than simulating it: `ratingCost`
+reads a target latency off a fitted line, so a solver whose latency does *not*
+vary with difficulty -- a calculator, a child mashing keys, a run that sampled a
+narrow cost range -- drives the slope to its floor and the quotient toward
+infinity. The rating is therefore bounded to the span the generator can actually
+produce. The fit is left undistorted; only the extrapolation drawn from it is
+clamped, and the simulation numbers above are unchanged by it.
+
+## The app
+
+A two-minute sprint. The rating is hidden while you play and revealed at the
+end, so the run stays about the arithmetic.
+
+- **Answers submit themselves** the moment you type the last digit. It removes a
+  keypress worth roughly 15% of an easy item. The cost is that a typo commits:
+  backspace only helps mid-answer.
+- **Latency is timestamped from the input event**, not from a render callback,
+  and the item's clock starts on the painted frame rather than the state update.
+  The engine is a latency model, so sloppy instrumentation would quietly corrupt
+  everything it learns.
+- **Keys fire on `pointerdown`**, about 100ms earlier than `click`.
+- A miss costs 4 seconds and shows it: the bar lurches, it does not announce.
+
+Type is Libre Franklin, self-hosted (the app must render identically offline).
+The chart mark is a separate token from the UI accent because it is validated
+against the chart surface in both themes -- dark mode needs a darker step
+(`#CE7E22`) than the interface accent to stay inside the legible lightness band.
+
+    npm run dev        # local
+    npm run build      # typecheck + bundle to dist/
+    npm run verify     # play a full sprint in Chromium and screenshot every screen
+
+## Deploying
+
+Cloudflare Pages, build command `npm run build`, output directory `dist`. The
+game makes no network calls at run time, so it is fully playable offline once
+installed.
+
 ## Layout
 
     src/engine/cost.js       structural difficulty of an item
     src/engine/rating.js     online per-player latency + accuracy fit
     src/engine/generator.js  cost-targeted item generation per facet
+    src/game/session.js      the sprint: ramp, facet choice, what a miss costs
+    src/game/tiers.ts        named bands over the continuous rating
+    src/ui/                  start, sprint and reveal screens
     sim/human.js             independent synthetic solver (ground truth)
-    sim/simulate.js          sprint loop and evaluation harness
+    sim/simulate.js          evaluation harness (drives src/game/session.js)
     sim/exp*.js              the experiments behind the table above
+
+The sprint logic lives in `src/game/session.js` and is imported by both the app
+and the harness. If the simulator drove its own copy, the configuration
+validated against 250 synthetic solvers would not be the one that ships.

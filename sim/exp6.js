@@ -5,11 +5,14 @@ import { FACETS } from '../src/engine/cost.js';
 import { makeHuman, mulberry32 } from './human.js';
 
 const base = { missPolicy: 'time', missPenaltyS: 4, durationS: 120 };
+// Every row states downWeight explicitly: SPRINT defaults it to true, so a row
+// that omitted it would silently be weighted and the comparison would collapse.
 const CONFIGS = [
-  ['flat, no weighting  ', { rampLo: 0, rampHi: 0 }],
-  ['moderate ramp       ', { rampLo: -1.5, rampHi: 2.5 }],
+  ['flat, no weighting  ', { rampLo: 0, rampHi: 0, downWeight: false }],
+  ['flat + weighting    ', { rampLo: 0, rampHi: 0, downWeight: true }],
+  ['moderate ramp       ', { rampLo: -1.5, rampHi: 2.5, downWeight: false }],
   ['moderate + weighting', { rampLo: -1.5, rampHi: 2.5, downWeight: true }],
-  ['hybrid 60/40        ', { flatFraction: 0.6, rampHi: 3.0 }],
+  ['hybrid 60/40        ', { flatFraction: 0.6, rampHi: 3.0, downWeight: false }],
   ['hybrid 60/40 + wgt  ', { flatFraction: 0.6, rampHi: 3.0, downWeight: true }],
 ];
 

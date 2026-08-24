@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Node / Vite
+node_modules/
+dist/
+dev-dist/
+shots/
+*.local

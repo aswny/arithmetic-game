@@ -6,15 +6,9 @@
 // includes structure the engine's cost model does NOT represent -- so a good
 // score here means the engine generalised, not that it graded its own homework.
 
-export function mulberry32(seed) {
-  let t = seed >>> 0;
-  return () => {
-    t = (t + 0x6D2B79F5) >>> 0;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// Re-exported for the experiments. A PRNG carries no model structure, so
+// sharing it does not compromise this file's independence from the engine.
+export { mulberry32 } from '../src/game/rng.js';
 
 const nDigits = (n) => String(Math.abs(n)).length;
 const log2 = (n) => Math.log2(Math.max(n, 2));

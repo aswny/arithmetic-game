@@ -1,90 +1,45 @@
-// Evaluation harness. Drives the real engine (src/engine/*) against the
-// independent synthetic solver (sim/human.js) and reports whether the model
-// actually recovers ability, stays calibrated, and holds players in flow.
+// Evaluation harness. Drives the real game session (src/game/session.js) and
+// the real engine (src/engine/*) against the independent synthetic solver in
+// human.js, and reports whether the model recovers ability, stays calibrated,
+// and holds players in flow.
+//
+// The sprint logic lives in src/game/session.js, not here, so what these
+// experiments measure is exactly what the app runs.
 
-import { costOf, FACETS } from '../src/engine/cost.js';
+import { FACETS } from '../src/engine/cost.js';
 import { generateItem } from '../src/engine/generator.js';
-import {
-  createProfile, observe, ratingCost, predictLogRT, predictCorrect, TARGET_SECONDS,
-} from '../src/engine/rating.js';
-import { makeHuman, mulberry32 } from './human.js';
-
-// ---------- reachable cost range per facet, sampled once ----------
-const FACET_RANGE = {};
-{
-  const rng = mulberry32(99);
-  for (const f of FACETS) {
-    const costs = [];
-    for (const t of [1, 3, 5, 7, 9]) {
-      for (let i = 0; i < 120; i++) costs.push(generateItem(rng, { targetCost: t, facet: f, pool: 20 }).cost);
-    }
-    costs.sort((a, b) => a - b);
-    FACET_RANGE[f] = { lo: costs[Math.floor(costs.length * 0.03)], hi: costs[Math.floor(costs.length * 0.97)] };
-  }
-}
-
-// Facets are chosen by weakness (large latency offset = slow = weak), with an
-// exploration bonus for under-sampled facets, penalised by how far the facet
-// sits from the cost the ramp is currently asking for.
-function chooseFacet(profile, target, rng) {
-  const weights = FACETS.map((f) => {
-    const r = FACET_RANGE[f];
-    const miss = Math.max(0, r.lo - target) + Math.max(0, target - r.hi);
-    const weakness = (profile.offsets[f] ?? 0) * 2.0;
-    const explore = 1.2 / Math.sqrt(1 + (profile.facetN[f] ?? 0));
-    return Math.exp(weakness + explore - 1.4 * miss);
-  });
-  const total = weights.reduce((s, w) => s + w, 0);
-  let r = rng() * total;
-  for (let i = 0; i < FACETS.length; i++) { r -= weights[i]; if (r <= 0) return FACETS[i]; }
-  return FACETS[FACETS.length - 1];
-}
+import { ratingCost, TARGET_SECONDS } from '../src/engine/rating.js';
+import { createSession } from '../src/game/session.js';
+import { mulberry32 } from '../src/game/rng.js';
 
 export function runSprint(profile, human, rng, opts = {}) {
-  const {
-    durationS = 60, missPolicy = 'time', missPenaltyS = 3, lives = 3,
-    rampLo = -1.5, rampHi = 2.5, urgency = 1.15,
-    flatFraction = 0,      // portion of the run held at the player's rating
-    downWeight = false,    // shrink the learning rate for off-band items
-  } = opts;
-
-  let clock = durationS, solved = 0, missed = 0;
-  const seen = new Set(), log = [];
-
-  while (clock > 0) {
-    const progress = 1 - clock / durationS;
-    const rated = ratingCost(profile);
-    const ramped = flatFraction > 0
-      ? (progress < flatFraction ? 0 : rampHi * (progress - flatFraction) / (1 - flatFraction))
-      : rampLo + (rampHi - rampLo) * progress;
-    const target = Math.max(0.6, rated + ramped);
-    const facet = chooseFacet(profile, target, rng);
-    const item = generateItem(rng, { targetCost: target, facet, exclude: seen });
-    seen.add(`${item.op}${item.a}_${item.b}`);
-
-    const predLog = predictLogRT(profile, item.cost, item.facet);
-    const predAcc = predictCorrect(profile, item.cost);
+  const { urgency = 1.15, ...cfg } = opts;
+  const session = createSession(profile, rng, cfg);
+  const log = [];
+  while (!session.isOver()) {
+    const item = session.nextItem();
     const res = human.answer(item, urgency);
-
-    clock -= res.rtMs / 1000;
-    if (res.correct) solved++;
-    else {
-      missed++;
-      if (missPolicy === 'time') clock -= missPenaltyS;
-      else if (missPolicy === 'sudden') clock = 0;
-      else if (missPolicy === 'lives' && missed >= lives) clock = 0;
-    }
-
-    const weight = downWeight
-      ? 1 / (1 + 0.55 * Math.abs(item.cost - rated))
-      : 1;
-    observe(profile, item, { ...res, weight });
-    log.push({ cost: item.cost, facet: item.facet, target, predLog, predAcc, ...res });
+    session.submit(res);
+    log.push({ cost: item.cost, facet: item.facet, ...res });
   }
-  return { solved, missed, items: log.length, log };
+  return { solved: session.solved, missed: session.missed, items: session.items, log };
 }
 
 // ---------- ground truth: the cost this solver sustains at TARGET_SECONDS ----------
+const FACET_RANGE = (() => {
+  const rng = mulberry32(99);
+  const out = {};
+  for (const facet of FACETS) {
+    const costs = [];
+    for (const targetCost of [1, 3, 5, 7, 9]) {
+      for (let i = 0; i < 120; i++) costs.push(generateItem(rng, { targetCost, facet, pool: 20 }).cost);
+    }
+    costs.sort((a, b) => a - b);
+    out[facet] = { lo: costs[Math.floor(costs.length * 0.03)], hi: costs[Math.floor(costs.length * 0.97)] };
+  }
+  return out;
+})();
+
 export function trueRating(human, rng, urgency = 1.15) {
   const medianAt = (c) => {
     const rts = [];
@@ -122,3 +77,4 @@ export function spearman(xs, ys) {
   const den = Math.sqrt(rx.reduce((s, x) => s + (x - mx) ** 2, 0) * ry.reduce((s, y) => s + (y - my) ** 2, 0));
   return num / den;
 }
+export { ratingCost };

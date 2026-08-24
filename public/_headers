@@ -1,0 +1,12 @@
+# Cloudflare Pages. Vite fingerprints everything under /assets, and the fonts
+# are versioned by name, so both are safe to cache indefinitely.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker must be revalidated, or a stale one pins an old build.
+/sw.js
+  Cache-Control: no-cache
+/registerSW.js
+  Cache-Control: no-cache

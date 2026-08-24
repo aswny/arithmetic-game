@@ -14,6 +14,7 @@
   --accent-ink: #A85D0E;   /* the accent, darkened until it is legible as text */
   --miss: #C0392B;
   --press: #F1EEE8;
+  --scrim: rgba(251, 250, 247, .93);
   --shadow: 0 1px 2px rgba(18, 16, 14, .06);
 }
 @media (prefers-color-scheme: dark) {
@@ -28,13 +29,14 @@
     --accent-ink: #F0A855;
     --miss: #E5705F;
     --press: #262220;
+    --scrim: rgba(18, 16, 14, .94);
     --shadow: none;
   }
 }
 :root[data-theme='dark'] {
   --bg: #12100E; --surface: #1C1917; --ink: #F5F2EC; --muted: #A39C94;
   --faint: #6B6560; --rule: #2E2924; --accent: #E8952F; --accent-ink: #F0A855;
-  --miss: #E5705F; --press: #262220; --shadow: none;
+  --miss: #E5705F; --press: #262220; --scrim: rgba(18, 16, 14, .94); --shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -104,7 +106,10 @@ body {
 .button--quiet { background: transparent; color: var(--muted); font-weight: 600; padding: .75rem 1.25rem; }
 
 /* ---------- sprint ---------- */
-.timer { height: 4px; background: var(--rule); flex: none; overflow: hidden; }
+.sprint { position: relative; }
+/* Above the pause scrim: seeing the bar sitting exactly where it stopped is
+   the reassurance that pausing did not cost anything. */
+.timer { height: 4px; background: var(--rule); flex: none; overflow: hidden; position: relative; z-index: 3; }
 .timer__fill {
   height: 100%; width: 100%; background: var(--accent);
   transform-origin: left center; will-change: transform;
@@ -113,7 +118,12 @@ body {
 
 .sprint__head {
   flex: none; display: flex; justify-content: space-between; align-items: center;
-  padding: .9rem 1.25rem; font-size: .8125rem; font-weight: 600; color: var(--muted);
+  gap: .75rem;
+  /* The pause key has its own tap padding, so the row is inset less on the
+     right than the count needs on the left. */
+  padding: .45rem .75rem .45rem 1.25rem;
+  font-size: .8125rem; font-weight: 600; color: var(--muted);
+  min-height: 3rem;
 }
 .sprint__count { color: var(--ink); font-weight: 800; font-size: 1.0625rem; }
 .sprint__penalty { color: var(--miss); font-weight: 800; opacity: 0; }
@@ -123,6 +133,49 @@ body {
   18% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(.5rem); }
 }
+
+/* A quiet target: it must be reachable without being a thing you aim at while
+   answering, and it sits far from the thumbs, at the opposite end of the pad. */
+.iconbutton {
+  appearance: none; border: 0; cursor: pointer; font: inherit;
+  width: 2.75rem; height: 2.75rem; border-radius: 999px;
+  display: grid; place-items: center;
+  background: transparent; color: var(--muted);
+  -webkit-user-select: none; user-select: none;
+}
+.iconbutton:active { background: var(--press); color: var(--ink); }
+.sprint--paused .timer__fill { opacity: .4; }
+
+/* ---------- pause ----------
+   Covers the whole sprint below the timer bar, keypad included. */
+.pause {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 2rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
+  background: var(--scrim);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: fade .12s ease-out;
+}
+.pause[hidden] { display: none; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* The problem is removed, not merely covered. A scrim you can still make out
+   the keypad through is one you can read a 4rem numeral through -- which was
+   exactly what dark mode did -- and a readable problem turns the pause into
+   the free thinking time it is not supposed to be. */
+.sprint--paused .stage { visibility: hidden; }
+.pause__panel { display: flex; flex-direction: column; align-items: center; gap: .25rem; max-width: 22rem; }
+.pause__title {
+  margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -.03em; line-height: 1;
+}
+.pause__stat {
+  margin: .6rem 0 0; font-size: .8125rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .09em;
+}
+.pause__note { margin: .9rem 0 1.6rem; color: var(--muted); font-size: .9375rem; line-height: 1.5; }
+.pause .button + .button { margin-top: .35rem; }
 
 .stage {
   flex: 1; min-height: 0;

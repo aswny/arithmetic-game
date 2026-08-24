@@ -62,6 +62,28 @@ for (let i = 0; i < 60; i++) {
   for (const ch of typed) { await page.keyboard.press(ch); await page.waitForTimeout(110); }
   solvedCount++;
   if (i === 4) { await page.waitForTimeout(120); await page.screenshot({ path: `${out}/3-miss-${scheme}.png` }); }
+
+  // Pause once, mid-run. The assertion that matters is that the clock is
+  // genuinely stopped and the problem genuinely gone: a pause that leaked into
+  // the item's latency, or left the problem readable, would quietly corrupt
+  // every observation the engine draws from the run.
+  if (i === 6) {
+    const scaleOf = () => page.evaluate(() =>
+      Number(document.querySelector('.timer__fill').style.transform.match(/scaleX\(([\d.]+)\)/)?.[1] ?? 1));
+    await page.getByRole('button', { name: 'Pause' }).click();
+    await page.waitForSelector('.pause', { state: 'visible' });
+    const atPause = await scaleOf();
+    if (await page.locator('.problem').isVisible()) throw new Error('problem still visible while paused');
+    if (!(await page.getByRole('button', { name: 'End run' }).isVisible())) throw new Error('no end-run control');
+    await page.screenshot({ path: `${out}/3b-pause-${scheme}.png` });
+    await page.waitForTimeout(2500);
+    if (await scaleOf() !== atPause) throw new Error('timer advanced while paused');
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await page.waitForSelector('.pause', { state: 'hidden' });
+    // 2.5s is 2% of the bar; if the pause were charged as thinking time the
+    // next frame would already show it.
+    if (atPause - (await scaleOf()) > 0.01) throw new Error('pause was charged to the clock');
+  }
   await page.waitForTimeout(40);
 }
 console.log('answered', solvedCount, 'items');

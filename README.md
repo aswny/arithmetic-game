@@ -101,6 +101,13 @@ end, so the run stays about the arithmetic.
   everything it learns.
 - **Keys fire on `pointerdown`**, about 100ms earlier than `click`.
 - A miss costs 4 seconds and shows it: the bar lurches, it does not announce.
+- **Pausing stops the clock and hides the problem.** Both halves are required.
+  The engine is handed the age of the item on screen as its latency, so a
+  paused second that stayed in that age would be recorded as thinking; and a
+  problem left readable under the scrim would make the pause free thinking time
+  instead. Ending the run early lives behind the pause, so a mistap during a
+  sprint cannot cost the run. The unanswered item on screen is discarded either
+  way -- an early finish teaches the model exactly what a timeout does.
 
 Type is Libre Franklin, self-hosted (the app must render identically offline).
 The chart mark is a separate token from the UI accent because it is validated

@@ -12,7 +12,7 @@ export function startScreen(profile: Profile, onPlay: () => void): HTMLElement {
   const mark = el('div', 'start__mark', '+');
   const heading = el('div');
   heading.append(
-    el('h1', 'start__title', 'Mental Arithmetic Sprint'),
+    el('h1', 'start__title', 'NumberDash'),
     el('p', 'start__sub', played
       ? 'Two minutes. Every answer teaches it something about how you calculate.'
       : 'Two minutes of arithmetic. Answers submit themselves — just type the digits.'),

@@ -13,8 +13,8 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
       manifest: {
-        name: 'Mental Arithmetic Sprint',
-        short_name: 'Sprint',
+        name: 'NumberDash',
+        short_name: 'NumberDash',
         description: 'A two-minute mental arithmetic sprint that learns how you calculate.',
         theme_color: '#12100E',
         background_color: '#FBFAF7',

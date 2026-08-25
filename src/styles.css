@@ -86,7 +86,7 @@ body {
   margin: 0; font-size: clamp(2rem, 9vw, 2.75rem); font-weight: 800;
   letter-spacing: -.03em; line-height: 1.05;
 }
-.start__sub { margin: .6rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.5; max-width: 22rem; }
+.start__sub { margin: .6rem auto 0; color: var(--muted); font-size: 1rem; line-height: 1.5; max-width: 22rem; }
 .start__stats { display: flex; gap: 2.5rem; justify-content: center; }
 .stat { display: flex; flex-direction: column; gap: .25rem; }
 .stat__value { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; }

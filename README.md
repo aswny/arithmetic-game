@@ -1,10 +1,11 @@
-# arithmetic-game
+# NumberDash
 
 A mental-arithmetic speed sprint with a difficulty model that adapts to the
 individual solver. Endless timed run; the rating is hidden while you play and
 revealed on the end screen.
 
-Target deployment: Cloudflare Pages (static, installable PWA).
+Live at [numberdash.pages.dev](https://numberdash.pages.dev) on Cloudflare Pages
+(static, installable PWA).
 
 ## The difficulty model
 

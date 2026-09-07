@@ -108,9 +108,9 @@ export function sprintScreen(profile: Profile, onDone: (result: SprintResult) =>
 
   function renderProblem(item: Item): void {
     problem.replaceChildren(
-      el('span', undefined, String(item.a)),
+      el('span', 'problem__num', String(item.a)),
       el('span', 'problem__op', OP_GLYPH[item.op] ?? item.op),
-      el('span', undefined, String(item.b)),
+      el('span', 'problem__num problem__num--b', String(item.b)),
     );
     replay(stage, 'stage--enter');
   }

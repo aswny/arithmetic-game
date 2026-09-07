@@ -194,21 +194,29 @@ body {
 }
 .problem__op { color: var(--accent-ink); margin: 0 .28em; }
 /* inline-block is load-bearing, not decorative -- a plain inline span ignores
-   transforms entirely, so the vibration below would be a silent no-op without it.
-   steps(1, end) snaps between positions instead of easing through them, which is
-   what reads as a vibration rather than a float; will-change promotes the digits
-   to their own layer so snapping them every ~140ms doesn't force a text repaint. */
-.problem__num { display: inline-block; animation: numberShake .14s steps(1, end) infinite; will-change: transform; }
-/* Different period (not just delay) so the two numbers beat against each other and
-   never sync into one shaking block -- and .14s/.17s are deliberately not integer
-   multiples of a 60/120Hz frame time, or the motion would alias into a still frame. */
-.problem__num--b { animation-delay: -.07s; animation-duration: .17s; }
-@keyframes numberShake {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-.6px, .4px) rotate(-.3deg); }
-  50% { transform: translate(.5px, -.4px) rotate(.3deg); }
-  75% { transform: translate(-.4px, .35px) rotate(-.25deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+   rotate/translate entirely, so the jiggle below would be a silent no-op without it.
+   Rock and bob are driven as the independent rotate/translate properties rather than
+   two @keyframes on transform -- transform animations don't compose, the later one
+   in the list simply overrides the earlier, so one of the two motions would vanish.
+   will-change lists those two properties (not transform) so the digits still get
+   promoted to their own layer under the property names actually being animated. */
+.problem__num { display: inline-block; animation: jiggleRock .26s ease-in-out infinite, jiggleBob .21s ease-in-out infinite; will-change: rotate, translate; }
+/* Non-harmonic periods (.26s rock vs .21s bob) so the rotation and the bob drift in
+   and out of alignment instead of locking into a repeating combined pose -- that
+   mismatch is what reads as organic jiggle instead of a metronome. The two numbers
+   are offset by half a period each so they rock opposite ways, like adjacent icons
+   in an iOS icon grid, rather than jiggling as one synced block. */
+.problem__num--b { animation-delay: -.13s, -.105s; }
+@keyframes jiggleRock {
+  0% { rotate: -1.2deg; }
+  50% { rotate: 1.2deg; }
+  100% { rotate: -1.2deg; }
+}
+@keyframes jiggleBob {
+  0% { translate: 0 0; }
+  30% { translate: .4px -.7px; }
+  60% { translate: -.4px -.3px; }
+  100% { translate: 0 0; }
 }
 .stage--shake { animation: shake .3s cubic-bezier(.36,.07,.19,.97); }
 @keyframes shake {

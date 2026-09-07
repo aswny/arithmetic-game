@@ -194,16 +194,20 @@ body {
 }
 .problem__op { color: var(--accent-ink); margin: 0 .28em; }
 /* inline-block is load-bearing, not decorative -- a plain inline span ignores
-   transforms entirely, so the wobble below would be a silent no-op without it. */
-.problem__num { display: inline-block; animation: numberShake 2.2s ease-in-out infinite; }
-/* Offset in both delay and duration so the two numbers drift apart instead of
-   shaking in unison -- lockstep motion reads as one wobbling block, not two. */
-.problem__num--b { animation-delay: -1.1s; animation-duration: 2.6s; }
+   transforms entirely, so the vibration below would be a silent no-op without it.
+   steps(1, end) snaps between positions instead of easing through them, which is
+   what reads as a vibration rather than a float; will-change promotes the digits
+   to their own layer so snapping them every ~140ms doesn't force a text repaint. */
+.problem__num { display: inline-block; animation: numberShake .14s steps(1, end) infinite; will-change: transform; }
+/* Different period (not just delay) so the two numbers beat against each other and
+   never sync into one shaking block -- and .14s/.17s are deliberately not integer
+   multiples of a 60/120Hz frame time, or the motion would alias into a still frame. */
+.problem__num--b { animation-delay: -.07s; animation-duration: .17s; }
 @keyframes numberShake {
   0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-1.5px, .8px) rotate(-1.2deg); }
-  50% { transform: translate(.5px, -1.2px) rotate(.6deg); }
-  75% { transform: translate(1.2px, .6px) rotate(1deg); }
+  25% { transform: translate(-.6px, .4px) rotate(-.3deg); }
+  50% { transform: translate(.5px, -.4px) rotate(.3deg); }
+  75% { transform: translate(-.4px, .35px) rotate(-.25deg); }
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 .stage--shake { animation: shake .3s cubic-bezier(.36,.07,.19,.97); }
